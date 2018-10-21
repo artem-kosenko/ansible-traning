@@ -10,6 +10,9 @@ vagrant ssh-config 2>/dev/null | grep -A9 "^Host vm1" >> ~/.ssh/config
 # check ansible connection (if does not work, check the day1/inventory file)
 ansible vm1 -i day1/inventory -m ping
 
+# generate ssh key for user1
+ssh-keygen -q -N '' -C user1 -t rsa -f day1/files/id_rsa_user1
+
 # run playbook
 ansible-playbook day1/site.yml -i day1/inventory
 
