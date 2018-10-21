@@ -1,1 +1,3 @@
-day1/files/id_rsa_user1
+.vagrant
+day1/files/id_rsa*
+*.retry

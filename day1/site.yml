@@ -1,0 +1,57 @@
+- hosts: all
+
+  vars:
+    user_name: user1
+    user_id: 2000
+    user_primary_group: user1
+    user_primary_group_id: 2000
+    user_password: "$6$3cyzyBG/s3Oh4l/m$XRMnAASPJCLAZFWib33EmPDvGYJOo09PSk9s3.azEgvoaiVJ0BHhNV5dbo.8MfiFL6pIdHhqWU/i.T9vhufx3/"
+    user_authorized_key: id_rsa_user1.pub
+    user_home_dir: /home/user1
+    user_shell: "/bin/bash"
+
+  tasks:
+  # selinux
+  - name: setenforce 0
+    become: true
+    selinux:
+      policy: targeted
+      state: permissive
+  # create group; create user and ann in the group; add user's ssh key to the .ssh/authorized_keys
+  - name: Ensure group "{{ user_primary_group }}" exists
+    become: true
+    group:
+      name: "{{ user_primary_group }}"
+      gid: "{{ user_primary_group_id }}"
+      state: present
+  - name: Add the user "{{ user_name }}" with a specific uid and a primary group "{{ user_primary_group }}"
+    become: true
+    user:
+      name: "{{ user_name }}"
+      uid: "{{ user_id }}"
+      password: "{{ user_password }}"
+      comment: "{{ user_name }} - created with ansible"
+      group: "{{ user_primary_group }}"
+      groups: wheel
+      append: true
+      shell: "{{ user_shell }}"
+      home: "{{ user_home_dir }}"
+  - name: Set authorized key in alternate location
+    become: true
+    authorized_key:
+      user: "{{ user_name }}"
+      state: present
+      key: "{{ lookup('file', 'id_rsa_user1.pub') }}"
+  # sudo
+  - name: ensure configure of sudoers base file
+    become: true
+    template: 
+      src: sudoers.j2
+      dest: /etc/sudoers
+      mode: 0440
+      owner: root
+      group: root
+      validate: '/usr/sbin/visudo -cf %s'
+    tags:
+    - "configuration"
+    - "sudo"
